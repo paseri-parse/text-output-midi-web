@@ -1,4 +1,5 @@
-import { DRUM_MAPPING } from './drumMapping';
+import { DRUM_MAPPING, DrumMapping } from './drumMapping';
+import { PIANO_MAPPING, PianoMapping } from './pianoMapping';
 
 export interface ParsedNote {
   note: number;
@@ -6,35 +7,135 @@ export interface ParsedNote {
   name: string;
 }
 
-export function parsePhrase(phrase: string, baseDuration: number = 1): ParsedNote[] {
+export interface ParsedChord {
+  notes: number[];  // [] = rest, [n] = single note, [n1,n2,...] = chord
+  duration: number;
+}
+
+// 数字サフィックス: 1=全音符, 2=2分, 4=4分, 8=8分, 16=16分
+const NOTE_NUM_RE = /^(16|1|2|4|8)/;
+
+// ブロックコメント（/* ... */）を除去する
+function stripComments(phrase: string): string {
+  return phrase.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function parseDurationSuffix(
+  phrase: string,
+  i: number,
+  baseDuration: number
+): { duration: number; nextI: number } {
+  let noteBaseUnit = baseDuration;
+  const numMatch = NOTE_NUM_RE.exec(phrase.slice(i));
+  if (numMatch) {
+    noteBaseUnit = 4 / parseInt(numMatch[1]);
+    i += numMatch[0].length;
+  }
+
+  let dotFactor = 1;
+  if (i < phrase.length && phrase[i] === '.') {
+    dotFactor = 1.5;
+    i++;
+  }
+
+  let ties = 0;
+  while (i < phrase.length && phrase[i] === 'ー') {
+    ties++;
+    i++;
+  }
+
+  return { duration: noteBaseUnit * (dotFactor + ties), nextI: i };
+}
+
+export function parsePhrase(phrase: string, baseDuration: number = 1, mapping: DrumMapping = DRUM_MAPPING): ParsedNote[] {
   const notes: ParsedNote[] = [];
   let i = 0;
+  phrase = stripComments(phrase);
 
   while (i < phrase.length) {
     const char = phrase[i];
-    
-    if (!DRUM_MAPPING[char as keyof typeof DRUM_MAPPING]) {
+    const entry = mapping[char];
+
+    if (!entry) {
       i++;
       continue;
     }
+    i++;
 
-    const mapping = DRUM_MAPPING[char as keyof typeof DRUM_MAPPING];
-    let duration = baseDuration;
-
-    let j = i + 1;
-    while (j < phrase.length && phrase[j] === char) {
-      duration += baseDuration;
-      j++;
+    // # で半音上げ
+    let noteNum = entry.note;
+    if (i < phrase.length && phrase[i] === '#' && noteNum !== -1) {
+      noteNum += 1;
+      i++;
     }
 
-    notes.push({
-      note: mapping.note,
-      duration: duration * (baseDuration < 1 ? 1 : baseDuration),
-      name: mapping.name
-    });
+    const { duration, nextI } = parseDurationSuffix(phrase, i, baseDuration);
+    i = nextI;
 
-    i = j;
+    notes.push({
+      note: noteNum,
+      duration,
+      name: noteNum !== entry.note ? entry.name + '#' : entry.name,
+    });
   }
 
   return notes;
+}
+
+export function parsePianoPhrase(phrase: string, baseDuration: number = 1, mapping: PianoMapping = PIANO_MAPPING): ParsedChord[] {
+  const chords: ParsedChord[] = [];
+  let i = 0;
+  phrase = stripComments(phrase);
+
+  while (i < phrase.length) {
+    const char = phrase[i];
+
+    if (char === '"') {
+      // 和音: 閉じる " まで読む
+      i++;
+      const notes: number[] = [];
+      while (i < phrase.length && phrase[i] !== '"') {
+        const entry = mapping[phrase[i]];
+        i++;
+        if (entry && entry.note !== -1) {
+          let noteNum = entry.note;
+          if (i < phrase.length && phrase[i] === '#') {
+            noteNum += 1;
+            i++;
+          }
+          notes.push(noteNum);
+        }
+      }
+      if (i < phrase.length) i++; // 閉じ " をスキップ
+
+      const { duration, nextI } = parseDurationSuffix(phrase, i, baseDuration);
+      i = nextI;
+      chords.push({ notes, duration });
+      continue;
+    }
+
+    const entry = mapping[char];
+    if (!entry) {
+      i++;
+      continue;
+    }
+    i++;
+
+    // # で半音上げ
+    let noteNumP = entry.note;
+    if (i < phrase.length && phrase[i] === '#' && noteNumP !== -1) {
+      noteNumP += 1;
+      i++;
+    }
+
+    const { duration, nextI } = parseDurationSuffix(phrase, i, baseDuration);
+    i = nextI;
+
+    chords.push({
+      notes: noteNumP === -1 ? [] : [noteNumP],
+      duration,
+    });
+  }
+
+  return chords;
 }
