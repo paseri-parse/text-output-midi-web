@@ -1,6 +1,7 @@
 export interface DrumMappingEntry {
   note: number;
   name: string;
+  volume?: number; // 音量を追加
 }
 
 export type DrumMapping = Record<string, DrumMappingEntry>;

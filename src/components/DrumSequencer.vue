@@ -53,7 +53,7 @@ const pianoChannels = ref<PianoChannel[]>([
     id: _nextChannelId++,
     name: 'ピアノ Ch.1', phrase: 'cde o5cde',
     timbre: 'triangle',
-    volume: -6,
+    volume: 100,
     octaveShift: 0
   }
 ])
@@ -98,13 +98,29 @@ let audioPlayer: AudioPlayer | null = null
 const parsedNotes = computed(() => {
   const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
   const bassSnareNotes = parsePhrase(bassSnarePhrase.value, duration, drumMapping.value)
-  const cymbalNotes = parsePhrase(cymbalPhrase.value, duration, drumMapping.value)
+  const cymbalNotes = parsePhrase(
+    cymbalPhrase.value,
+    duration,
+    drumMapping.value,
+  )
   return [...bassSnareNotes, ...cymbalNotes]
 })
 
 const parsedPianoTracks = computed(() => {
-  const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-  return pianoChannels.value.map(ch => parsePianoPhrase(ch.phrase, duration, pianoMapping.value, ch.octaveShift))
+  const duration =
+    NOTE_DURATIONS[
+      baseDuration.value as keyof typeof NOTE_DURATIONS
+    ]
+
+  return pianoChannels.value.map(ch =>
+    parsePianoPhrase(
+      ch.phrase,
+      duration,
+      pianoMapping.value,
+      ch.octaveShift,
+      ch.volume,
+    )
+  )
 })
 
 const play = async () => {
@@ -346,8 +362,14 @@ const importJSON = () => {
             </select>
           </label>
           <label>
-            音量 ({{ ch.volume }}dB)
-            <input type="range" v-model.number="ch.volume" min="-30" max="0" step="1" />
+            音量 ({{ ch.volume }})
+            <input
+              type="range"
+              v-model.number="ch.volume"
+              min="0"
+              max="127"
+              step="1"
+            />
           </label>
           <label>
             オクターブ ({{ ch.octaveShift >= 0 ? '+' : '' }}{{ ch.octaveShift }})

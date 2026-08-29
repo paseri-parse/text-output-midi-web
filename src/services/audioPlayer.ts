@@ -3,7 +3,7 @@ import { ParsedNote, ParsedChord } from '../utils/parser';
 
 export interface PianoTrackConfig {
   timbre: 'sine' | 'triangle' | 'square' | 'sawtooth';
-  volume: number;      // dB
+  volume: number;      // 0-127 の絶対値
   octaveShift: number; // 整数、-2〜+2
 }
 
@@ -28,21 +28,21 @@ export class AudioPlayer {
     // //     envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
     // }).toDestination();
     this.kick = new PolySynth(MembraneSynth, {
-    volume: 0,
-    pitchDecay: 0.05,
-    octaves: 4,
-    envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.4 }
-  }).toDestination();
+      volume: 0,
+      pitchDecay: 0.05,
+      octaves: 4,
+      envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.4 }
+    }).toDestination();
 
     // this.snare = new NoiseSynth({
     //   noise: { type: 'white' },
     //   envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.05 },
     // }).toDestination();
     this.snare = new NoiseSynth({
-        volume: -2,
-        noise: { type: 'white' },
-        envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
-      }).toDestination();
+      volume: -2,
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
+    }).toDestination();
 
     // スネアの低域（ドンッという芯の成分）
     this.snareBody = new PolySynth(MembraneSynth, {
@@ -87,23 +87,65 @@ export class AudioPlayer {
     // pianos は play() 呼び出し時にトラック数分生成する
   }
 
-  private triggerNote(note: number, duration: number, time: number): void {
+  private triggerNote(
+    note: number,
+    duration: number,
+    time: number,
+    volume: number
+  ): void {
+    // 0〜127 → Tone.js の 0〜1
+    const velocity = Math.max(0, Math.min(127, volume)) / 127;
+
     switch (note) {
       case 36:
-        this.kick?.triggerAttackRelease('C1', duration, time);
+        this.kick?.triggerAttackRelease(
+          'C1',
+          duration,
+          time,
+          velocity
+        );
         break;
+
       case 38:
-        (this.snare as any)?.triggerAttackRelease(duration, time);
-        this.snareBody?.triggerAttackRelease('C1', duration, time);
+        (this.snare as any)?.triggerAttackRelease(
+          duration,
+          time,
+          velocity
+        );
+
+        this.snareBody?.triggerAttackRelease(
+          'C1',
+          duration,
+          time,
+          velocity
+        );
         break;
+
       case 42:
-        this.hihatClosed?.triggerAttackRelease(400, duration, time);
+        this.hihatClosed?.triggerAttackRelease(
+          400,
+          duration,
+          time,
+          velocity
+        );
         break;
+
       case 46:
-        this.hihatOpen?.triggerAttackRelease(400, duration, time);
+        this.hihatOpen?.triggerAttackRelease(
+          400,
+          duration,
+          time,
+          velocity
+        );
         break;
+
       case 49:
-        this.crash?.triggerAttackRelease(300, duration, time);
+        this.crash?.triggerAttackRelease(
+          300,
+          duration,
+          time,
+          velocity
+        );
         break;
     }
   }
@@ -133,7 +175,7 @@ export class AudioPlayer {
           const n = note.note;
           const d = noteDuration;
           transport.schedule((audioTime) => {
-            this.triggerNote(n, d, audioTime);
+            this.triggerNote(n, d, audioTime, note.volume);
           }, t);
         }
         currentTime += noteDuration;
@@ -147,39 +189,54 @@ export class AudioPlayer {
         const cfg = pianoConfigs?.[i];
         return new PolySynth(Synth, {
           oscillator: { type: cfg?.timbre ?? 'triangle' },
-          volume: cfg?.volume ?? -6,
+          volume: this.volumeToDb(cfg?.volume ?? 100),
           envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.8 },
         }).toDestination();
       });
 
       pianoTracks.forEach((chords, trackIdx) => {
-        const octaveShift = pianoConfigs?.[trackIdx]?.octaveShift ?? 0;
         let currentTime = 0;
+
         for (const chord of chords) {
           const noteDuration = chord.duration * beatSeconds;
+
           if (chord.notes.length > 0) {
             const t = currentTime;
-            const freqs = chord.notes.map(n => 440 * Math.pow(2, (n - 69 + octaveShift * 12) / 12));
+
+            const freqs = chord.notes.map(
+              n => 440 * Math.pow(2, (n - 69) / 12)
+            );
+
             const d = noteDuration;
             const synth = this.pianos[trackIdx];
+
             transport.schedule((audioTime) => {
-              synth?.triggerAttackRelease(freqs, d, audioTime);
+              synth?.triggerAttackRelease(
+                freqs,
+                d,
+                audioTime,
+                chord.volume / 127
+              );
             }, t);
           }
+
           currentTime += noteDuration;
-          if (currentTime > maxDuration) maxDuration = currentTime;
+
+          if (currentTime > maxDuration) {
+            maxDuration = currentTime;
+          }
         }
       });
+
+      transport.start('+0');
+
+      await new Promise<void>((resolve) => {
+        this.playbackTimeout = setTimeout(() => {
+          this.cleanup();
+          resolve();
+        }, maxDuration * 1000 + 500);
+      });
     }
-
-    transport.start('+0');
-
-    await new Promise<void>((resolve) => {
-      this.playbackTimeout = setTimeout(() => {
-        this.cleanup();
-        resolve();
-      }, maxDuration * 1000 + 500);
-    });
   }
 
   private cleanup(): void {
@@ -190,11 +247,11 @@ export class AudioPlayer {
     const transport = getTransport();
     transport.stop();
     transport.cancel();
-    this.kick?.dispose();   this.kick = null;
-    this.snare?.dispose();  this.snare = null;
+    this.kick?.dispose(); this.kick = null;
+    this.snare?.dispose(); this.snare = null;
     this.hihatClosed?.dispose(); this.hihatClosed = null;
-    this.hihatOpen?.dispose();   this.hihatOpen = null;
-    this.crash?.dispose();  this.crash = null;
+    this.hihatOpen?.dispose(); this.hihatOpen = null;
+    this.crash?.dispose(); this.crash = null;
     this.pianos.forEach(p => p.dispose());
     this.pianos = [];
     this.isPlaying = false;
@@ -202,5 +259,11 @@ export class AudioPlayer {
 
   public stop(): void {
     this.cleanup();
+  }
+
+  public volumeToDb(volume: number): number {
+    if (volume <= 0) return -Infinity;
+
+    return 20 * Math.log10(volume / 127);
   }
 }
