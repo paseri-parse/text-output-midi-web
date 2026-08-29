@@ -8,8 +8,8 @@ import { AudioPlayer, PianoTrackConfig } from '../services/audioPlayer'
 
 const bassSnarePhrase = ref('どったんどどたん')
 const cymbalPhrase = ref('ぱっちっちっしー')
-const bpm = ref(120)
-const baseDuration = ref('1/4')
+const bpm = ref(160)
+const baseDuration = ref('1/8')
 const isPlaying = ref(false)
 
 const drumMapping = ref<DrumMapping>(JSON.parse(JSON.stringify(DRUM_MAPPING)))
@@ -49,7 +49,13 @@ interface PianoChannel {
 }
 let _nextChannelId = 1
 const pianoChannels = ref<PianoChannel[]>([
-  { id: _nextChannelId++, name: 'ピアノ Ch.1', phrase: 'ドミソ"ドミソ"4', timbre: 'triangle', volume: -6, octaveShift: 0 }
+  {
+    id: _nextChannelId++,
+    name: 'ピアノ Ch.1', phrase: 'cde o5cde',
+    timbre: 'triangle',
+    volume: -6,
+    octaveShift: 0
+  }
 ])
 
 const addPianoChannel = () => {
@@ -98,7 +104,7 @@ const parsedNotes = computed(() => {
 
 const parsedPianoTracks = computed(() => {
   const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-  return pianoChannels.value.map(ch => parsePianoPhrase(ch.phrase, duration, pianoMapping.value))
+  return pianoChannels.value.map(ch => parsePianoPhrase(ch.phrase, duration, pianoMapping.value, ch.octaveShift))
 })
 
 const play = async () => {
@@ -193,8 +199,47 @@ const importJSON = () => {
 
 <template>
   <div class="container">
-    <h1>🥁 ドラムシーケンサー</h1>
-    
+    <h1>🥁 テキストシーケンサー</h1>
+
+    <div class="section">
+      <h2>設定</h2>
+      <div class="control-group">
+        <div>
+          <label for="bpm">BPM:</label>
+          <input
+            id="bpm"
+            v-model.number="bpm"
+            type="range"
+            min="40"
+            max="300"
+            step="1"
+          />
+          <span>{{ bpm }}</span>
+        </div>
+
+        <div>
+          <label for="duration">基本音符長:</label>
+          <select id="duration" v-model="baseDuration">
+            <option value="1/16">1/16</option>
+            <option value="1/8">1/8</option>
+            <option value="1/4">1/4</option>
+            <option value="1/2">1/2</option>
+            <option value="全">全音符</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>操作</h2>
+      <div class="buttons">
+        <button @click="play" :disabled="isPlaying">▶ 再生</button>
+        <button @click="stop" :disabled="!isPlaying">⏹ 停止</button>
+        <button @click="downloadDrumMIDI">⬇ ドラム MIDI</button>
+        <button @click="downloadCombinedMIDI">⬇ 全トラック MIDI</button>
+      </div>
+    </div>
+
     <div class="section">
       <h2>バスドラム・スネア</h2>
       <label for="bass-snare">フレーズ入力:</label>
@@ -223,6 +268,56 @@ const importJSON = () => {
         ぱ = クラッシュ(49) | ち = クローズハイハット(42) | し = オープンハイハット(46)<br>
         <small>音符長: し8=8分音符 | 付点: し8. | 延長: しー(2倍)</small>
       </div>
+    </div>
+
+    <div class="section">
+      <h2>ドラムマッピング設定</h2>
+      <table class="mapping-table">
+        <thead>
+          <tr>
+            <th>文字</th>
+            <th>MIDIノート番号</th>
+            <th>名前</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in mappingRows" :key="row.char">
+            <td>
+              <input
+                class="mapping-input char-input"
+                :value="row.char"
+                maxlength="1"
+                @change="updateMappingChar(row.char, ($event.target as HTMLInputElement).value)"
+              />
+            </td>
+            <td>
+              <input
+                class="mapping-input"
+                type="number"
+                v-model.number="drumMapping[row.char].note"
+                min="-1"
+                max="127"
+              />
+            </td>
+            <td>
+              <input
+                class="mapping-input"
+                type="text"
+                v-model="drumMapping[row.char].name"
+              />
+            </td>
+            <td>
+              <button class="delete-btn" @click="removeMappingRow(row.char)">✕</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mapping-actions">
+        <button @click="addMappingRow">+ 追加</button>
+        <button @click="resetMapping">リセット</button>
+      </div>
+      <div class="help-text">MIDIノート番号 -1 = 休符</div>
     </div>
 
     <div class="section">
@@ -318,95 +413,6 @@ const importJSON = () => {
       <div class="mapping-actions">
         <button @click="addPianoMappingRow">+ 追加</button>
         <button @click="resetPianoMapping">リセット</button>
-      </div>
-      <div class="help-text">MIDIノート番号 -1 = 休符</div>
-    </div>
-
-    <div class="section">
-      <h2>設定</h2>
-      <div class="control-group">
-        <div>
-          <label for="bpm">BPM:</label>
-          <input
-            id="bpm"
-            v-model.number="bpm"
-            type="range"
-            min="40"
-            max="300"
-            step="1"
-          />
-          <span>{{ bpm }}</span>
-        </div>
-
-        <div>
-          <label for="duration">基本音符長:</label>
-          <select id="duration" v-model="baseDuration">
-            <option value="1/16">1/16</option>
-            <option value="1/8">1/8</option>
-            <option value="1/4">1/4</option>
-            <option value="1/2">1/2</option>
-            <option value="全">全音符</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>操作</h2>
-      <div class="buttons">
-        <button @click="play" :disabled="isPlaying">▶ 再生</button>
-        <button @click="stop" :disabled="!isPlaying">⏹ 停止</button>
-        <button @click="downloadDrumMIDI">⬇ ドラム MIDI</button>
-        <button @click="downloadCombinedMIDI">⬇ 全トラック MIDI</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>ドラムマッピング設定</h2>
-      <table class="mapping-table">
-        <thead>
-          <tr>
-            <th>文字</th>
-            <th>MIDIノート番号</th>
-            <th>名前</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in mappingRows" :key="row.char">
-            <td>
-              <input
-                class="mapping-input char-input"
-                :value="row.char"
-                maxlength="1"
-                @change="updateMappingChar(row.char, ($event.target as HTMLInputElement).value)"
-              />
-            </td>
-            <td>
-              <input
-                class="mapping-input"
-                type="number"
-                v-model.number="drumMapping[row.char].note"
-                min="-1"
-                max="127"
-              />
-            </td>
-            <td>
-              <input
-                class="mapping-input"
-                type="text"
-                v-model="drumMapping[row.char].name"
-              />
-            </td>
-            <td>
-              <button class="delete-btn" @click="removeMappingRow(row.char)">✕</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="mapping-actions">
-        <button @click="addMappingRow">+ 追加</button>
-        <button @click="resetMapping">リセット</button>
       </div>
       <div class="help-text">MIDIノート番号 -1 = 休符</div>
     </div>

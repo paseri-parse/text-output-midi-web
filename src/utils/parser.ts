@@ -82,53 +82,113 @@ export function parsePhrase(phrase: string, baseDuration: number = 1, mapping: D
   return notes;
 }
 
-export function parsePianoPhrase(phrase: string, baseDuration: number = 1, mapping: PianoMapping = PIANO_MAPPING): ParsedChord[] {
+export function parsePianoPhrase(
+  phrase: string,
+  baseDuration: number = 1,
+  mapping: PianoMapping = PIANO_MAPPING,
+  octaveShift: number = 0
+): ParsedChord[] {
   const chords: ParsedChord[] = [];
   let i = 0;
   phrase = stripComments(phrase);
 
+  // コンポーネントで設定されたオクターブを初期値にする
+  let currentOctaveShift = octaveShift;
+
   while (i < phrase.length) {
     const char = phrase[i];
 
+    // o5 / o4 / o3 ... を検出
+    if (
+      char === 'o' &&
+      i + 1 < phrase.length &&
+      /[0-9]/.test(phrase[i + 1])
+    ) {
+      const octave = Number(phrase[i + 1]);
+
+      // C4を基準にしたオクターブシフト
+      currentOctaveShift = octave - 4;
+
+      i += 2;
+      continue;
+    }
+
     if (char === '"') {
-      // 和音: 閉じる " まで読む
+      // 和音
       i++;
+
       const notes: number[] = [];
+
       while (i < phrase.length && phrase[i] !== '"') {
         const entry = mapping[phrase[i]];
         i++;
+
         if (entry && entry.note !== -1) {
-          let noteNum = entry.note;
+          let noteNum =
+            entry.note + currentOctaveShift * 12;
+
+          // # で半音上げ
           if (i < phrase.length && phrase[i] === '#') {
             noteNum += 1;
             i++;
           }
+
           notes.push(noteNum);
         }
       }
-      if (i < phrase.length) i++; // 閉じ " をスキップ
 
-      const { duration, nextI } = parseDurationSuffix(phrase, i, baseDuration);
+      if (i < phrase.length) {
+        i++;
+      }
+
+      const { duration, nextI } =
+        parseDurationSuffix(
+          phrase,
+          i,
+          baseDuration
+        );
+
       i = nextI;
-      chords.push({ notes, duration });
+
+      chords.push({
+        notes,
+        duration,
+      });
+
       continue;
     }
 
     const entry = mapping[char];
+
     if (!entry) {
       i++;
       continue;
     }
+
     i++;
 
+    let noteNumP =
+      entry.note === -1
+        ? -1
+        : entry.note + currentOctaveShift * 12;
+
     // # で半音上げ
-    let noteNumP = entry.note;
-    if (i < phrase.length && phrase[i] === '#' && noteNumP !== -1) {
+    if (
+      i < phrase.length &&
+      phrase[i] === '#' &&
+      noteNumP !== -1
+    ) {
       noteNumP += 1;
       i++;
     }
 
-    const { duration, nextI } = parseDurationSuffix(phrase, i, baseDuration);
+    const { duration, nextI } =
+      parseDurationSuffix(
+        phrase,
+        i,
+        baseDuration
+      );
+
     i = nextI;
 
     chords.push({
