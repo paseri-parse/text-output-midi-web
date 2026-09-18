@@ -9,6 +9,7 @@ export type DrumMapping = Record<string, DrumMappingEntry>;
 export const DRUM_MAPPING: DrumMapping = {
   'ど': { note: 36, name: 'Bass Drum' },
   'た': { note: 38, name: 'Snare' },
+  'こ': { note: 37, name: 'Side Stick' },
   'ぱ': { note: 49, name: 'Crash Cymbal' },
   'ち': { note: 42, name: 'Closed Hi-Hat' },
   'し': { note: 46, name: 'Open Hi-Hat' },

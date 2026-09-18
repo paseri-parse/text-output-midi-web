@@ -6,11 +6,12 @@ import { PIANO_MAPPING, PianoMapping } from '../utils/pianoMapping'
 import { generateDrumMIDI, generatePianoMIDI, generateCombinedMIDI, downloadMIDI } from '../services/midiGenerator'
 import { AudioPlayer, PianoTrackConfig } from '../services/audioPlayer'
 
-const bassSnarePhrase = ref('どったんどどたん')
-const cymbalPhrase = ref('ぱっちっちっしー')
+const bassSnarePhrase = ref('どったんどどたんどどたどっどたん')
+const cymbalPhrase = ref('ぱっちちちちしーぱっしっしっしー')
 const bpm = ref(160)
 const baseDuration = ref('1/8')
 const isPlaying = ref(false)
+const sendToIac = ref(false)
 
 const drumMapping = ref<DrumMapping>(JSON.parse(JSON.stringify(DRUM_MAPPING)))
 
@@ -51,7 +52,7 @@ let _nextChannelId = 1
 const pianoChannels = ref<PianoChannel[]>([
   {
     id: _nextChannelId++,
-    name: 'ピアノ Ch.1', phrase: 'cde o5cde',
+    name: 'ピアノ Ch.1', phrase: '',
     timbre: 'triangle',
     volume: 100,
     octaveShift: 0
@@ -136,7 +137,13 @@ const play = async () => {
       volume: ch.volume,
       octaveShift: ch.octaveShift,
     }))
-    await audioPlayer.play([bassSnareNotes, cymbalNotes], bpm.value, pianoTracks, pianoConfigs)
+    await audioPlayer.play(
+      [bassSnareNotes, cymbalNotes],
+      bpm.value,
+      pianoTracks,
+      pianoConfigs,
+      sendToIac.value,
+    )
   } catch (error) {
     console.error('Playback error:', error)
   } finally {
@@ -254,6 +261,10 @@ const importJSON = () => {
         <button @click="downloadDrumMIDI">⬇ ドラム MIDI</button>
         <button @click="downloadCombinedMIDI">⬇ 全トラック MIDI</button>
       </div>
+      <label>
+        <input v-model="sendToIac" type="checkbox" :disabled="isPlaying" />
+        IAC Driverへ送信
+      </label>
     </div>
 
     <div class="section">
@@ -378,7 +389,7 @@ const importJSON = () => {
         </div>
         <textarea
           v-model="ch.phrase"
-          :placeholder='`例: ドミソ"ドミソ"4ラシ`'
+          :placeholder='`例: ドミソ"ドミソ"4ラシ or cde o5cde`'
           rows="2"
         />
         <div class="help-text">

@@ -1,5 +1,6 @@
 import { start, getTransport, MembraneSynth, NoiseSynth, MetalSynth, PolySynth, Synth } from 'tone';
 import { ParsedNote, ParsedChord } from '../utils/parser';
+import { connectToIac, sendNoteOff, sendNoteOn } from '../utils/IACAccessor.ts';
 
 export interface PianoTrackConfig {
   timbre: 'sine' | 'triangle' | 'square' | 'sawtooth';
@@ -150,9 +151,25 @@ export class AudioPlayer {
     }
   }
 
-  public async play(tracks: ParsedNote[][], bpm: number, pianoTracks?: ParsedChord[][], pianoConfigs?: PianoTrackConfig[]): Promise<void> {
+  public async play(
+    tracks: ParsedNote[][],
+    bpm: number,
+    pianoTracks?: ParsedChord[][],
+    pianoConfigs?: PianoTrackConfig[],
+    useIac = false,
+  ): Promise<void> {
     if (this.isPlaying) return;
     this.isPlaying = true;
+
+    if (useIac) {
+      try {
+        await this.playToIac(tracks, bpm, pianoTracks);
+      } catch (error) {
+        this.cleanup();
+        throw error;
+      }
+      return;
+    }
 
     await start();
 
@@ -255,6 +272,55 @@ export class AudioPlayer {
     this.pianos.forEach(p => p.dispose());
     this.pianos = [];
     this.isPlaying = false;
+  }
+
+  private async playToIac(
+    tracks: ParsedNote[][],
+    bpm: number,
+    pianoTracks: ParsedChord[][] = [],
+  ): Promise<void> {
+    await connectToIac();
+
+    const beatSeconds = 60 / bpm;
+    const startTime = performance.now() + 50;
+    let maxDuration = 0;
+
+    tracks.forEach(track => {
+      let currentTime = 0;
+      track.forEach(note => {
+        const noteDuration = note.duration * beatSeconds;
+        if (note.note !== -1) {
+          const noteOnTime = startTime + currentTime * 1000;
+          const noteOffTime = noteOnTime + noteDuration * 1000;
+          sendNoteOn(note.note, note.volume, 9, noteOnTime);
+          sendNoteOff(note.note, 9, noteOffTime);
+        }
+        currentTime += noteDuration;
+        maxDuration = Math.max(maxDuration, currentTime);
+      });
+    });
+
+    pianoTracks.forEach((track, trackIndex) => {
+      let currentTime = 0;
+      track.forEach(chord => {
+        const noteDuration = chord.duration * beatSeconds;
+        const noteOnTime = startTime + currentTime * 1000;
+        const noteOffTime = noteOnTime + noteDuration * 1000;
+        chord.notes.forEach(note => {
+          sendNoteOn(note, chord.volume, trackIndex, noteOnTime);
+          sendNoteOff(note, trackIndex, noteOffTime);
+        });
+        currentTime += noteDuration;
+        maxDuration = Math.max(maxDuration, currentTime);
+      });
+    });
+
+    await new Promise<void>(resolve => {
+      this.playbackTimeout = setTimeout(() => {
+        this.cleanup();
+        resolve();
+      }, maxDuration * 1000 + 100);
+    });
   }
 
   public stop(): void {
