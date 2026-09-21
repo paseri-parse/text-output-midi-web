@@ -394,7 +394,7 @@ const importJSON = () => {
         />
         <div class="help-text">
           ド=C4 レ=D4 ミ=E4 フ=F4 ソ=G4 ラ=A4 シ=B4 ン=休符 |
-          <small>"ドミソ" で和音 | 音符長・付点・延長はドラムと同じ記法</small>
+          <small>"ドミソ" で和音 | 音符長・付点・延長はドラムと同じ記法 | o5やl8でオクターブや音符長を指定</small>
           <button class="inline-dl-btn" @click="downloadPianoMIDI(idx)">⬇ MIDI</button>
         </div>
       </div>
