@@ -3,6 +3,7 @@ import { PIANO_MAPPING, PianoMapping } from './pianoMapping';
 
 export interface ParsedNote {
   note: number;
+  notes?: number[];
   duration: number;
   volume: number;
   name: string;
@@ -114,6 +115,52 @@ export function parsePhrase(
         i += 1 + numMatch[0].length;
         continue;
       }
+    }
+
+    if (char === '"') {
+      i++;
+      const chordNotes: number[] = [];
+      const chordNames: string[] = [];
+
+      while (i < phrase.length && phrase[i] !== '"') {
+        const chordEntry = mapping[phrase[i]];
+        i++;
+
+        if (!chordEntry || chordEntry.note === -1) {
+          continue;
+        }
+
+        let noteNum = chordEntry.note;
+        let noteName = chordEntry.name;
+        if (i < phrase.length && phrase[i] === '#') {
+          noteNum++;
+          noteName += '#';
+          i++;
+        }
+
+        chordNotes.push(noteNum);
+        chordNames.push(noteName);
+      }
+
+      if (i < phrase.length && phrase[i] === '"') {
+        i++;
+      }
+
+      const { duration, nextI } = parseDurationSuffix(
+        phrase,
+        i,
+        currentDuration
+      );
+      i = nextI;
+
+      notes.push({
+        note: chordNotes[0] ?? -1,
+        notes: chordNotes,
+        duration,
+        volume: currentVolume,
+        name: chordNames.length > 0 ? chordNames.join(' + ') : 'Rest',
+      });
+      continue;
     }
 
     const entry = mapping[char];

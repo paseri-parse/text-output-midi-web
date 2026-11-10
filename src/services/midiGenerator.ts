@@ -47,9 +47,10 @@ function buildDrumTrack(tracks: ParsedNote[][]): number[] {
     let tick = 0;
     for (const note of track) {
       const ticks = Math.round(note.duration * PPQ);
-      if (note.note !== -1) {
-        events.push({ tick,          data: [0x99, note.note, 100] });
-        events.push({ tick: tick + ticks, data: [0x89, note.note, 0] });
+      const drumNotes = note.notes ?? (note.note === -1 ? [] : [note.note]);
+      for (const drumNote of drumNotes) {
+        events.push({ tick, data: [0x99, drumNote, note.volume] });
+        events.push({ tick: tick + ticks, data: [0x89, drumNote, 0] });
       }
       tick += ticks;
     }

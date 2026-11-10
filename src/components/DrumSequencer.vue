@@ -278,7 +278,7 @@ const importJSON = () => {
       />
       <div class="help-text">
         ど = バスドラム(36) | た = スネア(38) | っ = 休符<br>
-        <small>音符長: ど8=8分音符 ど4=4分 ど2=2分 ど1=全音符 | 付点: ど8. | 延長: どー(2倍) どーー(3倍)</small>
+        <small>"どた" のように引用符で囲むと同時に鳴ります | 音符長: ど8=8分音符 ど4=4分 ど2=2分 ど1=全音符 | 付点: ど8. | 延長: どー(2倍) どーー(3倍)</small>
       </div>
     </div>
 
@@ -293,7 +293,7 @@ const importJSON = () => {
       />
       <div class="help-text">
         ぱ = クラッシュ(49) | ち = クローズハイハット(42) | し = オープンハイハット(46)<br>
-        <small>音符長: し8=8分音符 | 付点: し8. | 延長: しー(2倍)</small>
+        <small>"ぱち" のように引用符で囲むと同時に鳴ります | 音符長: し8=8分音符 | 付点: し8. | 延長: しー(2倍)</small>
       </div>
     </div>
 
@@ -481,6 +481,8 @@ const importJSON = () => {
           <tr><td><code>ど8ー</code></td><td>8分音符タイ</td><td>1</td></tr>
           <tr><td><code>ど8.ー</code></td><td>付点8分 + タイ</td><td>1.25</td></tr>
           <tr><td><code>っ</code></td><td>休符（baseDuration 分）</td><td>baseDuration（無音）</td></tr>
+          <tr><td><code>"どた"</code></td><td>ドラムの和音（同時に発音）</td><td>baseDuration</td></tr>
+          <tr><td><code>"どた"8</code></td><td>ドラムの和音 + 音符長指定</td><td>0.5（8分音符）</td></tr>
           <tr><td><code>ド#</code></td><td>半音上げ（ドラム・ピアノ共通）</td><td>同上</td></tr>
           <tr><td><code>"ドミ#ソ"</code></td><td>和音内でも有効</td><td>同上</td></tr>
           <tr><td><code>"ドミソ"</code></td><td>和音（ピアノ）</td><td>baseDuration</td></tr>

@@ -187,12 +187,12 @@ export class AudioPlayer {
       let currentTime = 0;
       for (const note of track) {
         const noteDuration = note.duration * beatSeconds;
-        if (note.note !== -1) {
+        const drumNotes = note.notes ?? (note.note === -1 ? [] : [note.note]);
+        for (const drumNote of drumNotes) {
           const t = currentTime;
-          const n = note.note;
           const d = noteDuration;
           transport.schedule((audioTime) => {
-            this.triggerNote(n, d, audioTime, note.volume);
+            this.triggerNote(drumNote, d, audioTime, note.volume);
           }, t);
         }
         currentTime += noteDuration;
@@ -289,11 +289,12 @@ export class AudioPlayer {
       let currentTime = 0;
       track.forEach(note => {
         const noteDuration = note.duration * beatSeconds;
-        if (note.note !== -1) {
+        const drumNotes = note.notes ?? (note.note === -1 ? [] : [note.note]);
+        for (const drumNote of drumNotes) {
           const noteOnTime = startTime + currentTime * 1000;
           const noteOffTime = noteOnTime + noteDuration * 1000;
-          sendNoteOn(note.note, note.volume, 9, noteOnTime);
-          sendNoteOff(note.note, 9, noteOffTime);
+          sendNoteOn(drumNote, note.volume, 9, noteOnTime);
+          sendNoteOff(drumNote, 9, noteOffTime);
         }
         currentTime += noteDuration;
         maxDuration = Math.max(maxDuration, currentTime);
