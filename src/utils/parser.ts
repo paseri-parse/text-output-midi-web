@@ -42,7 +42,7 @@ function parseDurationSuffix(
   }
 
   let ties = 0;
-  while (i < phrase.length && phrase[i] === 'ー') {
+  while (i < phrase.length && (phrase[i] === 'ー' || phrase[i] === '^')) {
     ties++;
     i++;
   }

@@ -2,8 +2,10 @@ import { start, getTransport, MembraneSynth, NoiseSynth, MetalSynth, PolySynth, 
 import { ParsedNote, ParsedChord } from '../utils/parser';
 import { connectToIac, sendNoteOff, sendNoteOn } from '../utils/IACAccessor.ts';
 
+export const TIMBRE_OPTIONS = ['sine', 'triangle', 'square', 'sawtooth'] as const;
+
 export interface PianoTrackConfig {
-  timbre: 'sine' | 'triangle' | 'square' | 'sawtooth';
+  timbre: typeof TIMBRE_OPTIONS[number];
   volume: number;      // 0-127 の絶対値
   octaveShift: number; // 整数、-2〜+2
 }

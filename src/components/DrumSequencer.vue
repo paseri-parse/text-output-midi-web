@@ -4,24 +4,10 @@ import { parsePhrase, parsePianoPhrase } from '../utils/parser'
 import { NOTE_DURATIONS, DRUM_MAPPING, DrumMapping } from '../utils/drumMapping'
 import { PIANO_MAPPING, PianoMapping } from '../utils/pianoMapping'
 import { generateDrumMIDI, generatePianoMIDI, generateCombinedMIDI, downloadMIDI } from '../services/midiGenerator'
-import { AudioPlayer, PianoTrackConfig } from '../services/audioPlayer'
+import { AudioPlayer, PianoTrackConfig, TIMBRE_OPTIONS } from '../services/audioPlayer'
+import { bpm, mainPhrase, bassPhrase, snarePhrase, cymbalPhrase } from '../phrases'
 
-const bpm = ref(95)
 const baseDuration = ref('1/8')
-
-const bassSnarePhrase = ref(
-  'どったんどどたん どったっどどたど' +
-  'どったんどどたん どったっどどた l16 たた l8'
-)
-
-const cymbalPhrase = ref(
-  'ぱっしっしっしー しっしっしっしっ' +
-  'ぱっしっしっしー しっしっしっしっ'
-)
-
-const phrase = ref(
-  'ドミソ"ドミソ"4ラシ o5cde'
-)
 
 const isPlaying = ref(false)
 const sendToIac = ref(false)
@@ -66,16 +52,31 @@ let _nextChannelId = 1
 const pianoChannels = ref<PianoChannel[]>([
   {
     id: _nextChannelId++,
-    name: 'ピアノ Ch.1', phrase: phrase.value,
-    timbre: 'triangle',
+    name: 'ピアノ Ch.1', phrase: bassPhrase.value,
+    timbre: 'sawtooth' as typeof TIMBRE_OPTIONS[number],
+    volume: 70,
+    octaveShift: -2
+  },
+  {
+    id: _nextChannelId++,
+    name: 'ピアノ Ch.2', phrase: mainPhrase.value,
+    timbre: 'triangle' as typeof TIMBRE_OPTIONS[number],
     volume: 100,
     octaveShift: 0
-  }
+  },
 ])
 
 const addPianoChannel = () => {
   const id = _nextChannelId++
-  pianoChannels.value.push({ id, name: `ピアノ Ch.${id}`, phrase: phrase.value, timbre: 'triangle', volume: -6, octaveShift: 0 })
+  pianoChannels.value.push(
+    {
+      id,
+      name: `ピアノ Ch.${id}`,
+      phrase: '',
+      timbre: 'triangle' as typeof TIMBRE_OPTIONS[number],
+      volume: -6, octaveShift: 0
+    }
+  )
 }
 
 const removePianoChannel = (id: number) => {
@@ -112,7 +113,7 @@ let audioPlayer: AudioPlayer | null = null
 
 const parsedNotes = computed(() => {
   const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-  const bassSnareNotes = parsePhrase(bassSnarePhrase.value, duration, drumMapping.value)
+  const bassSnareNotes = parsePhrase(snarePhrase.value, duration, drumMapping.value)
   const cymbalNotes = parsePhrase(
     cymbalPhrase.value,
     duration,
@@ -143,7 +144,7 @@ const play = async () => {
   try {
     audioPlayer = new AudioPlayer()
     const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-    const bassSnareNotes = parsePhrase(bassSnarePhrase.value, duration, drumMapping.value)
+    const bassSnareNotes = parsePhrase(snarePhrase.value, duration, drumMapping.value)
     const cymbalNotes = parsePhrase(cymbalPhrase.value, duration, drumMapping.value)
     const pianoTracks = parsedPianoTracks.value
     const pianoConfigs: PianoTrackConfig[] = pianoChannels.value.map(ch => ({
@@ -206,7 +207,7 @@ const timestamp = () => {
 
 const downloadDrumMIDI = () => {
   const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-  const bassSnareNotes = parsePhrase(bassSnarePhrase.value, duration, drumMapping.value)
+  const bassSnareNotes = parsePhrase(snarePhrase.value, duration, drumMapping.value)
   const cymbalNotes = parsePhrase(cymbalPhrase.value, duration, drumMapping.value)
   const data = generateDrumMIDI([bassSnareNotes, cymbalNotes], bpm.value)
   downloadMIDI(data, `drum_${timestamp()}.mid`)
@@ -221,7 +222,7 @@ const downloadPianoMIDI = (idx: number) => {
 
 const downloadCombinedMIDI = () => {
   const duration = NOTE_DURATIONS[baseDuration.value as keyof typeof NOTE_DURATIONS]
-  const bassSnareNotes = parsePhrase(bassSnarePhrase.value, duration, drumMapping.value)
+  const bassSnareNotes = parsePhrase(snarePhrase.value, duration, drumMapping.value)
   const cymbalNotes = parsePhrase(cymbalPhrase.value, duration, drumMapping.value)
   const data = generateCombinedMIDI([bassSnareNotes, cymbalNotes], parsedPianoTracks.value, bpm.value)
   downloadMIDI(data, `all_tracks_${timestamp()}.mid`)
@@ -241,7 +242,7 @@ const jsonImportError = ref('')
 const exportJSON = () => {
   jsonImportError.value = ''
   jsonText.value = JSON.stringify({
-    bassSnarePhrase: bassSnarePhrase.value,
+    snarePhrase: snarePhrase.value,
     cymbalPhrase: cymbalPhrase.value,
     bpm: bpm.value,
     baseDuration: baseDuration.value,
@@ -255,7 +256,7 @@ const importJSON = () => {
   jsonImportError.value = ''
   try {
     const data = JSON.parse(jsonText.value)
-    if (data.bassSnarePhrase !== undefined) bassSnarePhrase.value = data.bassSnarePhrase
+    if (data.snarePhrase !== undefined) snarePhrase.value = data.snarePhrase
     if (data.cymbalPhrase !== undefined) cymbalPhrase.value = data.cymbalPhrase
     if (data.bpm !== undefined) bpm.value = data.bpm
     if (data.baseDuration !== undefined) baseDuration.value = data.baseDuration
@@ -320,7 +321,7 @@ const importJSON = () => {
       <label for="bass-snare">フレーズ入力:</label>
       <textarea
         id="bass-snare"
-        v-model="bassSnarePhrase"
+        v-model="snarePhrase"
         placeholder="例: どったんどどたん"
         rows="3"
       />
