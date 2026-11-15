@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { parsePhrase, parsePianoPhrase } from '../utils/parser'
 import { NOTE_DURATIONS, DRUM_MAPPING, DrumMapping } from '../utils/drumMapping'
 import { PIANO_MAPPING, PianoMapping } from '../utils/pianoMapping'
@@ -150,6 +150,40 @@ const play = async () => {
     isPlaying.value = false
   }
 }
+
+/** 
+ * スペースキーで再生/停止をトグルする
+ */
+const handleGlobalKeydown = (event: KeyboardEvent) => {
+  if (
+    event.key !== ' ' ||
+    event.repeat ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey
+  ) {
+    return
+  }
+
+  const target = event.target
+  if (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || target.closest('input, textarea, select'))
+  ) {
+    return
+  }
+
+  event.preventDefault()
+  if (isPlaying.value) {
+    stop()
+  } else {
+    void play()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleGlobalKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handleGlobalKeydown))
 
 const timestamp = () => {
   const now = new Date()
