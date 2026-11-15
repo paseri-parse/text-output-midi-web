@@ -6,10 +6,23 @@ import { PIANO_MAPPING, PianoMapping } from '../utils/pianoMapping'
 import { generateDrumMIDI, generatePianoMIDI, generateCombinedMIDI, downloadMIDI } from '../services/midiGenerator'
 import { AudioPlayer, PianoTrackConfig } from '../services/audioPlayer'
 
-const bassSnarePhrase = ref('どったんどどたんどどたどっどたん')
-const cymbalPhrase = ref('ぱっちちちちしーぱっしっしっしー')
-const bpm = ref(160)
+const bpm = ref(95)
 const baseDuration = ref('1/8')
+
+const bassSnarePhrase = ref(
+  'どったんどどたん どったっどどたど' +
+  'どったんどどたん どったっどどた l16 たた l8'
+)
+
+const cymbalPhrase = ref(
+  'ぱっしっしっしー しっしっしっしっ' +
+  'ぱっしっしっしー しっしっしっしっ'
+)
+
+const phrase = ref(
+  'ドミソ"ドミソ"4ラシ o5cde'
+)
+
 const isPlaying = ref(false)
 const sendToIac = ref(false)
 
@@ -49,10 +62,11 @@ interface PianoChannel {
   octaveShift: number
 }
 let _nextChannelId = 1
+
 const pianoChannels = ref<PianoChannel[]>([
   {
     id: _nextChannelId++,
-    name: 'ピアノ Ch.1', phrase: '',
+    name: 'ピアノ Ch.1', phrase: phrase.value,
     timbre: 'triangle',
     volume: 100,
     octaveShift: 0
@@ -61,7 +75,7 @@ const pianoChannels = ref<PianoChannel[]>([
 
 const addPianoChannel = () => {
   const id = _nextChannelId++
-  pianoChannels.value.push({ id, name: `ピアノ Ch.${id}`, phrase: '', timbre: 'triangle', volume: -6, octaveShift: 0 })
+  pianoChannels.value.push({ id, name: `ピアノ Ch.${id}`, phrase: phrase.value, timbre: 'triangle', volume: -6, octaveShift: 0 })
 }
 
 const removePianoChannel = (id: number) => {
