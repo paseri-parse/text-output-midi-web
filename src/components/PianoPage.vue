@@ -4,6 +4,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 const START_MIDI = 36
 const END_MIDI = 72
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const LABELLED_WHITE_NOTES = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B'])
 const BLACK_SET = new Set([1, 3, 6, 8, 10])
 const BLACK_OFFSET_IN_OCT = { 1: 0.65, 3: 1.65, 6: 3.65, 8: 4.65, 10: 5.65 }
 
@@ -25,7 +26,7 @@ const buildKeys = () => {
         label,
       })
     } else {
-      whites.push({ midi, label, isC: semitone === 0 })
+      whites.push({ midi, label, showLabel: LABELLED_WHITE_NOTES.has(NOTE_NAMES[semitone]) })
       whiteCount++
     }
   }
@@ -172,7 +173,7 @@ onUnmounted(() => {
           @pointerleave="onPointerLeave(key.midi)"
           @pointerenter="onPointerEnter(key.midi, $event)"
         >
-          <span v-if="key.isC" class="key-label">{{ key.label }}</span>
+          <span v-if="key.showLabel" class="key-label">{{ key.label }}</span>
         </div>
 
         <div

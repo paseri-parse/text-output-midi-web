@@ -307,15 +307,25 @@ const importJSONFile = async (event: Event) => {
       <div class="control-group">
         <div>
           <label for="bpm">BPM:</label>
-          <input
-            id="bpm"
-            v-model.number="bpm"
-            type="range"
-            min="40"
-            max="300"
-            step="1"
-          />
-          <span>{{ bpm }}</span>
+          <div class="bpm-controls">
+            <input
+              id="bpm"
+              v-model.number="bpm"
+              type="range"
+              min="40"
+              max="300"
+              step="1"
+            />
+            <input
+              id="bpm-number"
+              v-model.number="bpm"
+              type="number"
+              min="40"
+              max="300"
+              step="1"
+              aria-label="BPMを数値で入力"
+            />
+          </div>
         </div>
 
         <div>
@@ -655,6 +665,23 @@ textarea {
 .control-group div {
   display: flex;
   flex-direction: column;
+}
+
+.control-group .bpm-controls {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.bpm-controls input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 10px;
+}
+
+.bpm-controls input[type="number"] {
+  width: 80px;
+  margin-bottom: 10px;
 }
 
 .control-group span {
