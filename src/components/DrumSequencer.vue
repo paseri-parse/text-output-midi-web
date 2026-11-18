@@ -271,8 +271,6 @@ const importJSON = () => {
 
 <template>
   <div class="container">
-    <h1>🥁 テキストシーケンサー</h1>
-
     <div class="section">
       <h2>設定</h2>
       <div class="control-group">
@@ -566,12 +564,6 @@ const importJSON = () => {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #8B4789;
 }
 
 h2 {

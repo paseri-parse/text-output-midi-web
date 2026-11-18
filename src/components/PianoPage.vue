@@ -195,7 +195,7 @@ onUnmounted(() => {
 .piano-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 110px);
+  height: 100%;
   min-height: 320px;
   background: #111;
   color: #fff;

@@ -1,0 +1,190 @@
+{
+  "snarePhrase": "っっっっっっっっ っっっっっっっっっっっっっっっっ っっっっっっっっどったんどどたん どったっどどたどどったんどどたん どったっどどた l16 たた l8",
+  "cymbalPhrase": "っっっっっっっっ っっっっっっっっっっしーっっしー っっしーっっしーぱっしっしっしー しっしっしっしっぱっしっしっしー しっしっしっしっ",
+  "bpm": 95,
+  "baseDuration": "1/8",
+  "drumMapping": {
+    "ど": {
+      "note": 36,
+      "name": "Bass Drum"
+    },
+    "た": {
+      "note": 38,
+      "name": "Snare"
+    },
+    "こ": {
+      "note": 37,
+      "name": "Side Stick"
+    },
+    "ぱ": {
+      "note": 49,
+      "name": "Crash Cymbal"
+    },
+    "ち": {
+      "note": 42,
+      "name": "Closed Hi-Hat"
+    },
+    "し": {
+      "note": 46,
+      "name": "Open Hi-Hat"
+    },
+    "っ": {
+      "note": -1,
+      "name": "Rest"
+    },
+    "ん": {
+      "note": -1,
+      "name": "Rest"
+    }
+  },
+  "pianoChannels": [
+    {
+      "id": 1,
+      "name": "ピアノ Ch.1",
+      "phrase": "l1 n n o3 f^l8 o2 ffffffff ffffffff ffffffff ffffffff",
+      "timbre": "sawtooth",
+      "volume": 70,
+      "octaveShift": -2
+    },
+    {
+      "id": 2,
+      "name": "ピアノ Ch.2",
+      "phrase": "ffaggagf ffaggagf ffaggagf ffaggagfffaggagf ffaggagf ffaggagf ffaggagf",
+      "timbre": "triangle",
+      "volume": 100,
+      "octaveShift": 0
+    }
+  ],
+  "pianoMapping": {
+    "c": {
+      "note": 60,
+      "name": "C4",
+      "volume": 100
+    },
+    "d": {
+      "note": 62,
+      "name": "D4",
+      "volume": 100
+    },
+    "e": {
+      "note": 64,
+      "name": "E4",
+      "volume": 100
+    },
+    "f": {
+      "note": 65,
+      "name": "F4",
+      "volume": 100
+    },
+    "g": {
+      "note": 67,
+      "name": "G4",
+      "volume": 100
+    },
+    "a": {
+      "note": 69,
+      "name": "A4",
+      "volume": 100
+    },
+    "b": {
+      "note": 71,
+      "name": "B4",
+      "volume": 100
+    },
+    "n": {
+      "note": -1,
+      "name": "Rest",
+      "volume": 0
+    },
+    "ド": {
+      "note": 60,
+      "name": "C4",
+      "volume": 100
+    },
+    "レ": {
+      "note": 62,
+      "name": "D4",
+      "volume": 100
+    },
+    "ミ": {
+      "note": 64,
+      "name": "E4",
+      "volume": 100
+    },
+    "ファ": {
+      "note": 65,
+      "name": "F4",
+      "volume": 100
+    },
+    "ソ": {
+      "note": 67,
+      "name": "G4",
+      "volume": 100
+    },
+    "ラ": {
+      "note": 69,
+      "name": "A4",
+      "volume": 100
+    },
+    "シ": {
+      "note": 71,
+      "name": "B4",
+      "volume": 100
+    },
+    "ッ": {
+      "note": -1,
+      "name": "Rest",
+      "volume": 0
+    },
+    "ン": {
+      "note": -1,
+      "name": "Rest",
+      "volume": 0
+    },
+    "ど": {
+      "note": 60,
+      "name": "C4",
+      "volume": 100
+    },
+    "れ": {
+      "note": 62,
+      "name": "D4",
+      "volume": 100
+    },
+    "み": {
+      "note": 64,
+      "name": "E4",
+      "volume": 100
+    },
+    "ふぁ": {
+      "note": 65,
+      "name": "F4",
+      "volume": 100
+    },
+    "そ": {
+      "note": 67,
+      "name": "G4",
+      "volume": 100
+    },
+    "ら": {
+      "note": 69,
+      "name": "A4",
+      "volume": 100
+    },
+    "し": {
+      "note": 71,
+      "name": "B4",
+      "volume": 100
+    },
+    "っ": {
+      "note": -1,
+      "name": "Rest",
+      "volume": 0
+    },
+    "ん": {
+      "note": -1,
+      "name": "Rest",
+      "volume": 0
+    }
+  }
+}
