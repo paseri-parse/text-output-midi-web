@@ -238,6 +238,7 @@ const stop = () => {
 // --- JSON バックアップ ---
 const jsonText = ref('')
 const jsonImportError = ref('')
+const jsonFileInput = ref<HTMLInputElement | null>(null)
 
 const exportJSON = () => {
   jsonImportError.value = ''
@@ -250,6 +251,17 @@ const exportJSON = () => {
     pianoChannels: pianoChannels.value,
     pianoMapping: pianoMapping.value,
   }, null, 2)
+}
+
+const saveJSONFile = () => {
+  exportJSON()
+  const blob = new Blob([jsonText.value], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'drum-sequencer-settings.json'
+  link.click()
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 const importJSON = () => {
@@ -266,6 +278,25 @@ const importJSON = () => {
   } catch {
     jsonImportError.value = 'JSONの形式が正しくありません'
   }
+}
+
+const importJSONFile = async (event: Event) => {
+  const input = event.currentTarget as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  jsonImportError.value = ''
+  try {
+    jsonText.value = await file.text()
+  } catch (error) {
+    jsonImportError.value = 'JSONファイルを読み込めませんでした'
+    console.error('[JSON] Failed to read file:', error)
+    input.value = ''
+    return
+  }
+
+  importJSON()
+  input.value = ''
 }
 </script>
 
@@ -542,8 +573,17 @@ const importJSON = () => {
     <div class="section">
       <h2>JSON バックアップ</h2>
       <div class="json-actions">
-        <button @click="exportJSON">▲ エクスポート</button>
-        <button @click="importJSON">▼ インポート</button>
+        <button @click="saveJSONFile">ファイルに保存</button>
+        <button @click="jsonFileInput?.click()">ファイルから読み込み</button>
+        <button @click="exportJSON">テキストにエクスポート</button>
+        <button @click="importJSON">テキストからインポート</button>
+        <input
+          ref="jsonFileInput"
+          type="file"
+          accept=".json,application/json"
+          hidden
+          @change="importJSONFile"
+        />
       </div>
       <p v-if="jsonImportError" class="json-error">{{ jsonImportError }}</p>
       <textarea
@@ -867,6 +907,7 @@ button:disabled {
 
 .json-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
 }
