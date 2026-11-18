@@ -8,4 +8,6 @@ export const cymbalPhrase = ref('ちっちっちっちっ ちっちっちっち�
 
 export const bassPhrase = ref('')
 
-export const mainPhrase = ref('')
+export const mainPhrase = ref(
+  'l4 nnn d l8 g^ng f^nf '
+)
